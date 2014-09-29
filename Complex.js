@@ -23,6 +23,24 @@ Complex.rect = function rect (r, phi) {
 	return Complex(re, im);
 };
 
+Complex.sinh = function sinh (number) {
+	if (typeof Math.sinh === 'function') {
+		return Math.sinh(number);
+	} else {
+		var y = Math.exp(number);
+		return (y - 1/y) / 2;
+	}
+};
+
+Complex.cosh = function cosh (number) {
+	if (typeof Math.cosh === 'function') {
+		return Math.cosh(number);
+	} else {
+		var y = Math.exp(number);
+		return (y + 1/y) / 2;
+	}
+};
+
 Complex.prototype.add = function add (number) {
 	var complex = Complex.toComplex(number);
 
@@ -136,6 +154,38 @@ Complex.prototype.neg = function neg () {
 	this.re = -this.re;
 	this.im = -this.im;
 	return this;
+};
+
+Complex.prototype.sin = function sin () {
+	var re = this.re,
+		im = this.im;
+
+	this.re = Math.sin(re) * Complex.cosh(im);
+	this.im = Math.cos(re) * Complex.sinh(im);
+};
+
+Complex.prototype.cos = function cos () {
+	var re = this.re,
+		im = this.im;
+
+	this.re = Math.cos(re) * Complex.cosh(im);
+	this.im = - Math.sin(re) * Complex.sinh(im);
+};
+
+Complex.prototype.sinh = function sinh () {
+	var re = this.re,
+		im = this.im;
+
+	this.re = Complex.sinh(re) * Math.cos(im);
+	this.im = Complex.cosh(re) * Math.sin(im);
+};
+
+Complex.prototype.cosh = function cosh () {
+	var re = this.re,
+		im = this.im;
+
+	this.re = Complex.cosh(re) * Math.cos(im);
+	this.im = Complex.sinh(re) * Math.sin(im);
 };
 
 Complex.prototype.is = function is (number) {

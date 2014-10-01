@@ -39,6 +39,8 @@ window.Complex = (function() {
 		} else if (im === undefined) {
 			if (re instanceof Complex) {
 				return re.copy();
+			} else if (typeof re === 'number') {
+				return new Complex(re);
 			} else if (typeof re === 'string') {
 				return Complex.fromString(re);
 			}

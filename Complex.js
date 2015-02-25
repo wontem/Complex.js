@@ -1,13 +1,25 @@
 window.Complex = (function() {
-	var sinh = Math.sinh || function(number) {
-		var temp = Math.exp(number);
-		return (temp - 1/temp) / 2;
-	};
 
-	var cosh = Math.cosh || function(number) {
-		var temp = Math.exp(number);
-		return (temp + 1/temp) / 2;
-	};
+	var math = (function () {
+		var math;
+
+		math = {
+			sinh: Math.sinh || function(angle) {
+				var temp = Math.exp(angle);
+				return (temp - 1/temp) / 2;
+			},
+
+			cosh: Math.cosh || function(angle) {
+				var temp = Math.exp(angle);
+				return (temp + 1/temp) / 2;
+			},
+
+			sin: Math.sin,
+			cos: Math.cos
+		};
+
+		return math;
+	})();
 
 	function parsePart (string) {
 		var number = parseFloat(string);
@@ -19,7 +31,7 @@ window.Complex = (function() {
 			}
 		}
 		return number;
-	};
+	}
 
 	function registerAliases (options) {
 		var method, i, aliases, alias;
@@ -30,36 +42,29 @@ window.Complex = (function() {
 				Complex.prototype[alias] = Complex.prototype[method];
 			}
 		}
-	};
+	}
 
 	function Complex (re, im) {
-		if (this instanceof Complex) {
+		if (typeof re === 'number') {
 			this.re = re;
-			this.im = im !== undefined ? im : 0;
-		} else if (im === undefined) {
-			if (re instanceof Complex) {
-				return re.copy();
-			} else if (typeof re === 'number') {
-				return new Complex(re);
-			} else if (typeof re === 'string') {
-				return Complex.fromString(re);
-			}
+			this.im = im === undefined ? 0 : im;
 		} else {
-			return new Complex(re, im);
-		};
-	};
+			this.re = re.re;
+			this.im = re.im;
+		}
+	}
 
 	Complex.toComplex = function (number) {
-		if (number instanceof Complex) {
-			return number;
-		} else {
+		if (typeof number === 'number') {
 			return new Complex(number);
+		} else {
+			return number;
 		}
 	};
 
 	Complex.fromPolar = function (r, phi) {
-		var re = r * Math.cos(phi),
-			im = r * Math.sin(phi);
+		var re = r * math.cos(phi),
+			im = r * math.sin(phi);
 		return new Complex(re, im);
 	};
 
@@ -83,61 +88,99 @@ window.Complex = (function() {
 	};
 
 	Complex.prototype = {
+		getVector: function() {
+			return [this.re, this.im];
+		},
+
 		copy: function() {
 			return new Complex(this.re, this.im);
 		},
 
 		add: function(number) {
-			var complex = Complex.toComplex(number);
-
-			this.re += complex.re;
-			this.im += complex.im;
+			if (typeof number === 'number') {
+				this.scalarAdd(number);
+			} else {
+				this.re += number.re;
+				this.im += number.im;
+			}
 
 			return this;
 		},
 
 		sub: function(number) {
-			var complex = Complex.toComplex(number);
-
-			this.re -= complex.re;
-			this.im -= complex.im;
+			if (typeof number === 'number') {
+				this.scalarAdd(-number);
+			} else {
+				this.re -= number.re;
+				this.im -= number.im;
+			}
 
 			return this;
 		},
 
+		scalarAdd: function(number) {
+			this.re += number;
+			return this;
+		},
+
 		mul: function(number) {
-			var complex = Complex.toComplex(number);
+			var a, b, c, d;
 
-			var a = this.re,
-				b = this.im,
-				c = complex.re,
-				d = complex.im;
+			if (typeof number === 'number') {
+				this.scalarMul(number);
+			} else {
+				a = this.re;
+				b = this.im;
+				c = number.re;
+				d = number.im;
 
-			this.re = a * c - b * d;
-			this.im = b * c + a * d;
+				this.re = a * c - b * d;
+				this.im = b * c + a * d;
+			}
 
 			return this;
 		},
 
 		div: function(number) {
-			var complex = Complex.toComplex(number);
+			var a, b, c, d, divider;
 
-			var a = this.re,
-				b = this.im,
-				c = complex.re,
-				d = complex.im,
-				divider = c * c + d * d,
-				result;
-
-			if (a === 1 && b === 0) {
-				this.re = c / divider;
-				this.im = -(d / divider);
+			if (typeof number === 'number') {
+				this.scalarDiv(number);
 			} else {
-				this.re = (a * c + b * d) / divider;
-				this.im = (b * c - a * d) / divider;
+				a = this.re;
+				b = this.im;
+				c = number.re;
+				d = number.im;
+				divider = c * c + d * d;
+
+				if (a === 1 && b === 0) {
+					this.re = c / divider;
+					this.im = -(d / divider);
+				} else {
+					this.re = (a * c + b * d) / divider;
+					this.im = (b * c - a * d) / divider;
+				}
 			}
 
 			return this;
+		},
+
+		scalarMul: function(number) {
+			this.re *= number;
+			this.im *= number;
+
+			return this;
+		},
+
+		scalarDiv: function(number) {
+			this.re /= number;
+			this.im /= number;
+
+			return this;
+		},
+
+		dot: function(number) {
+			return this.re * number.re + this.im * number.im;
 		},
 
 		conj: function() {
@@ -151,8 +194,8 @@ window.Complex = (function() {
 			var x = Complex(Math.log(this.abs()), Math.atan2(this.im, this.re)).mul(complex),
 				r = Math.exp(x.re);
 
-			this.re = r * Math.cos(x.im);
-			this.im = r * Math.sin(x.im);
+			this.re = r * math.cos(x.im);
+			this.im = r * math.sin(x.im);
 
 			return this;
 		},
@@ -194,8 +237,8 @@ window.Complex = (function() {
 			var re = this.re,
 				im = this.im;
 
-			this.re = Math.sin(re) * cosh(im);
-			this.im = Math.cos(re) * sinh(im);
+			this.re = math.sin(re) * math.cosh(im);
+			this.im = math.cos(re) * math.sinh(im);
 			return this;
 		},
 
@@ -203,8 +246,8 @@ window.Complex = (function() {
 			var re = this.re,
 				im = this.im;
 
-			this.re = Math.cos(re) * cosh(im);
-			this.im = - Math.sin(re) * sinh(im);
+			this.re = math.cos(re) * math.cosh(im);
+			this.im = - math.sin(re) * math.sinh(im);
 			return this;
 		},
 
@@ -212,8 +255,8 @@ window.Complex = (function() {
 			var re = this.re,
 				im = this.im;
 
-			this.re = sinh(re) * Math.cos(im);
-			this.im = cosh(re) * Math.sin(im);
+			this.re = math.sinh(re) * math.cos(im);
+			this.im = math.cosh(re) * math.sin(im);
 			return this;
 		},
 
@@ -221,28 +264,28 @@ window.Complex = (function() {
 			var re = this.re,
 				im = this.im;
 
-			this.re = cosh(re) * Math.cos(im);
-			this.im = sinh(re) * Math.sin(im);
+			this.re = math.cosh(re) * math.cos(im);
+			this.im = math.sinh(re) * math.sin(im);
 			return this;
 		},
 
 		tan: function() {
 			var re = this.re,
 				im = this.im,
-				divider = Math.cos(2 * re) + cosh(2 * im);
-			
-			this.re = Math.sin(2 * re) / divider;
-			this.im = sinh(2 * im) / divider;
+				divider = math.cos(2 * re) + math.cosh(2 * im);
+
+			this.re = math.sin(2 * re) / divider;
+			this.im = math.sinh(2 * im) / divider;
 			return this;
 		},
 
 		tanh: function() {
 			var re = this.re,
 				im = this.im,
-				divider = cosh(2 * a) + Math.cos(2 * b);
-			
-			this.re = sinh(2 * re) / divider;
-			this.im = Math.sin(2 * im) / divider;
+				divider = math.cosh(2 * a) + math.cos(2 * b);
+
+			this.re = math.sinh(2 * re) / divider;
+			this.im = math.sin(2 * im) / divider;
 			return this;
 		},
 
@@ -268,6 +311,20 @@ window.Complex = (function() {
 			return this;
 		},
 
+		rotate: function(angle) {
+			var re, im,
+				cos = math.cos(angle),
+				sin = math.sin(angle);
+
+			re = this.re * cos - this.im * sin;
+			im = this.re * sin + this.im * cos;
+
+			this.re = re;
+			this.im = im;
+
+			return this;
+		},
+
 		abs: function() {
 			return Math.sqrt(this.re * this.re + this.im * this.im);
 		},
@@ -277,9 +334,15 @@ window.Complex = (function() {
 		},
 
 		is: function(number) {
-			var complex = Complex.toComplex(number);
+			var result = false;
 
-			return this.re === complex.re && this.im === complex.im;
+			if (typeof number === 'number') {
+				result = this.im === 0 && this.re === number;
+			} else {
+				result = this.re === number.re && this.im === number.im;
+			}
+
+			return result;
 		},
 
 		toString: function() {
@@ -290,7 +353,7 @@ window.Complex = (function() {
 			if (re !== 0) {
 				text += re;
 			}
-			
+
 			if (im > 0) {
 				text += (re === 0 ? '' : '+') + (im === 1 ? '' : im) + 'i';
 			} else if (im < 0) {

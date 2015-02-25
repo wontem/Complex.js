@@ -304,7 +304,7 @@ window.Complex = (function() {
 		},
 
 		exp: function() {
-			var complex = Complex.fromPolar(Math.exp(this.real), this.im);
+			var complex = Complex.fromPolar(Math.exp(this.re), this.im);
 			this.re = complex.re;
 			this.im = complex.im;
 

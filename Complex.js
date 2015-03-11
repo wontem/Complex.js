@@ -33,13 +33,18 @@ window.Complex = (function() {
 		return number;
 	}
 
-	function registerAliases (options) {
+	function registerAliases (options, properties) {
 		var method, i, aliases, alias;
 		for (method in options) {
 			aliases = options[method];
 			for (i = 0; i < aliases.length; i++) {
 				alias = aliases[i];
-				Complex.prototype[alias] = Complex.prototype[method];
+
+				if (properties[method]) {
+					Object.defineProperty(Complex.prototype, alias, properties[method]);
+				} else {
+					Complex.prototype[alias] = Complex.prototype[method];
+				}
 			}
 		}
 	}
@@ -48,27 +53,18 @@ window.Complex = (function() {
 		if (typeof re === 'number') {
 			this.re = re;
 			this.im = im === undefined ? 0 : im;
-		} else {
+		} else if (re instanceof Complex) {
 			this.re = re.re;
 			this.im = re.im;
 		}
 	}
 
-	Complex.toComplex = function (number) {
-		if (typeof number === 'number') {
-			return new Complex(number);
-		} else {
-			return number;
-		}
+	Complex.fromPolar = function Complex (abs, arg) {
+		this.re = abs * math.cos(arg);
+		this.im = abs * math.sin(arg);
 	};
 
-	Complex.fromPolar = function (r, phi) {
-		var re = r * math.cos(phi),
-			im = r * math.sin(phi);
-		return new Complex(re, im);
-	};
-
-	Complex.fromString = function (string) {
+	Complex.fromString = function Complex (string) {
 		var complexRegexp = /([-+]?(?:\d*\.?\d+)?i)|([-+]?\d*\.?\d+)/g,
 			values = string.match(complexRegexp),
 			i, value,
@@ -84,55 +80,95 @@ window.Complex = (function() {
 			}
 		}
 
-		return new Complex(re, im);
+		this.re = re;
+		this.im = im;
 	};
 
-	Complex.prototype = {
+	Complex.toComplex = function (value) {
+		if (value instanceof Complex)  {
+			return value;
+		} else if (typeof value === 'number') {
+			return new Complex(value);
+		} else if (typeof value.length !== undefined) {
+			return new Complex(value[0], value[1]);
+		} else if (typeof value === 'string') {
+			return new Complex.fromString(value);
+		}
+	};
+
+	Complex.prototype =
+	Complex.fromPolar.prototype =
+	Complex.fromString.prototype = {
+		constructor: Complex,
+
 		getVector: function() {
 			return [this.re, this.im];
 		},
 
-		copy: function() {
-			return new Complex(this.re, this.im);
+		clone: function() {
+			return new Complex(this);
 		},
 
-		add: function(number) {
-			if (typeof number === 'number') {
-				this.scalarAdd(number);
+		set: function(re, im) {
+			var complex;
+
+			if (typeof re === 'number') {
+				im = im === undefined ? 0 : im;
+				this.re = re;
+				this.im = im;
 			} else {
-				this.re += number.re;
-				this.im += number.im;
+				complex = Complex.toComplex(re);
+				this.re = complex.re;
+				this.im = complex.im;
 			}
 
 			return this;
 		},
 
-		sub: function(number) {
-			if (typeof number === 'number') {
-				this.scalarAdd(-number);
+		add: function(re, im) {
+			var complex;
+
+			if (typeof re === 'number') {
+				im = im === undefined ? 0 : im;
+				this.re += re;
+				this.im += im;
 			} else {
-				this.re -= number.re;
-				this.im -= number.im;
+				complex = Complex.toComplex(re);
+				this.re += complex.re;
+				this.im += complex.im;
 			}
 
 			return this;
 		},
 
-		scalarAdd: function(number) {
-			this.re += number;
+		sub: function(re, im) {
+			var complex;
+
+			if (typeof re === 'number') {
+				im = im === undefined ? 0 : im;
+				this.re -= re;
+				this.im -= im;
+			} else {
+				complex = Complex.toComplex(re);
+				this.re -= complex.re;
+				this.im -= complex.im;
+			}
+
 			return this;
 		},
 
-		mul: function(number) {
-			var a, b, c, d;
+		mul: function(re, im) {
+			var a, b, c, d, complex;
 
-			if (typeof number === 'number') {
-				this.scalarMul(number);
+			if (typeof re === 'number' && (im === undefined || im === 0)) {
+				this.re *= re;
+				this.im *= re;
 			} else {
+				complex = re instanceof Complex ? re : new Complex(re, im);
 				a = this.re;
 				b = this.im;
-				c = number.re;
-				d = number.im;
+				c = complex.re;
+				d = complex.im;
 
 				this.re = a * c - b * d;
 				this.im = b * c + a * d;
@@ -141,16 +177,18 @@ window.Complex = (function() {
 			return this;
 		},
 
-		div: function(number) {
-			var a, b, c, d, divider;
+		div: function(re, im) {
+			var a, b, c, d, divider, complex;
 
-			if (typeof number === 'number') {
-				this.scalarDiv(number);
+			if (typeof re === 'number' && (im === undefined || im === 0)) {
+				this.re /= re;
+				this.im /= re;
 			} else {
+				complex = re instanceof Complex ? re : new Complex(re, im);
 				a = this.re;
 				b = this.im;
-				c = number.re;
-				d = number.im;
+				c = complex.re;
+				d = complex.im;
 				divider = c * c + d * d;
 
 				if (a === 1 && b === 0) {
@@ -165,21 +203,11 @@ window.Complex = (function() {
 			return this;
 		},
 
-		scalarMul: function(number) {
-			this.re *= number;
-			this.im *= number;
-
-			return this;
-		},
-
-		scalarDiv: function(number) {
-			this.re /= number;
-			this.im /= number;
-
-			return this;
-		},
-
-		dot: function(number) {
+		dot: function(re, im) {
+			if (typeof re === 'number') {
+				im = im === undefined ? 0 : im;
+				return this.re * re + this.im * im;
+			}
 			return this.re * number.re + this.im * number.im;
 		},
 
@@ -188,10 +216,8 @@ window.Complex = (function() {
 			return this;
 		},
 
-		pow: function(number) {
-			var complex = Complex.toComplex(number);
-
-			var x = Complex(Math.log(this.abs()), Math.atan2(this.im, this.re)).mul(complex),
+		pow: function(re, im) {
+			var x = new Complex(Math.log(this.abs), this.arg).mul(re, im),
 				r = Math.exp(x.re);
 
 			this.re = r * math.cos(x.im);
@@ -201,7 +227,7 @@ window.Complex = (function() {
 		},
 
 		sqrt: function() {
-			var r = this.abs(),
+			var r = this.abs,
 				re, im;
 
 			if (this.re >= 0) {
@@ -294,8 +320,8 @@ window.Complex = (function() {
 
 			base = base || 0;
 
-			re = Math.log(this.abs());
-			im = this.arg() + base * 2 * Math.PI;
+			re = Math.log(this.abs);
+			im = this.arg + base * 2 * Math.PI;
 
 			this.re = re;
 			this.im = im;
@@ -304,42 +330,21 @@ window.Complex = (function() {
 		},
 
 		exp: function() {
-			var complex = Complex.fromPolar(Math.exp(this.re), this.im);
-			this.re = complex.re;
-			this.im = complex.im;
+			Complex.fromPolar.call(this, Math.exp(this.re), this.im);
 
 			return this;
 		},
 
-		rotate: function(angle) {
-			var re, im,
-				cos = math.cos(angle),
-				sin = math.sin(angle);
+		is: function(re, im) {
+			var result = false,
+				complex;
 
-			re = this.re * cos - this.im * sin;
-			im = this.re * sin + this.im * cos;
-
-			this.re = re;
-			this.im = im;
-
-			return this;
-		},
-
-		abs: function() {
-			return Math.sqrt(this.re * this.re + this.im * this.im);
-		},
-
-		arg: function() {
-			return Math.atan2(this.im, this.re);
-		},
-
-		is: function(number) {
-			var result = false;
-
-			if (typeof number === 'number') {
-				result = this.im === 0 && this.re === number;
+			if (typeof re === 'number') {
+				im = im === undefined ? 0 : im;
+				result = this.im === im && this.re === re;
 			} else {
-				result = this.re === number.re && this.im === number.im;
+				complex = Complex.toComplex(re);
+				result = this.im === complex.im && this.re === complex.re;
 			}
 
 			return result;
@@ -364,13 +369,60 @@ window.Complex = (function() {
 		}
 	};
 
-	var aliases = {
-		arg: ['angle', 'phase'],
-		copy: ['clone']
+	var properties = {
+		re: {
+			get: function () {
+				return this._re;
+			},
+
+			set: function (number) {
+				this._re = number;
+			},
+		},
+
+		im: {
+			get: function () {
+				return this._im;
+			},
+
+			set: function (number) {
+				this._im = number;
+			}
+		},
+
+		abs: {
+			get: function () {
+				return Math.sqrt(this.re * this.re + this.im * this.im);
+			},
+
+			set: function (abs) {
+				Complex.fromPolar.call(this, abs, this.arg);
+			}
+		},
+
+		arg: {
+			get: function () {
+				return Math.atan2(this.im, this.re);
+			},
+
+			set: function (arg) {
+				Complex.fromPolar.call(this, this.abs, arg);
+			}
+		}
+
 	};
 
-	registerAliases(aliases);
+	var aliases = {
+		clone: ['copy'],
+		is: ['equals'],
+		re: ['x'],
+		im: ['y'],
+		arg: ['angle', 'phase'],
+		abs: ['magnitude']
+	};
 
+	Object.defineProperties(Complex.prototype, properties);
+	registerAliases(aliases, properties);
 
 	return Complex;
 })();

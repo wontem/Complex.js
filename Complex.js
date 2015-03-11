@@ -52,12 +52,12 @@
 		}
 
 		function Complex (re, im) {
-			if (typeof re === 'number') {
-				this.re = re;
-				this.im = im === undefined ? 0 : im;
-			} else if (re instanceof Complex) {
+			if (re instanceof Complex) {
 				this.re = re.re;
 				this.im = re.im;
+			} else {
+				this.re = re === undefined ? 0 : re;
+				this.im = im === undefined ? 0 : im;
 			}
 		}
 

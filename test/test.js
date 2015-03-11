@@ -60,6 +60,10 @@ describe('Complex', function(){
 			complex = new Complex.fromString('-i-2+4-13.3i');
 			complex.should.have.property('re', 2);
 			complex.should.have.property('im', -14.3);
+
+			complex = new Complex.fromString('-.1i+.4');
+			complex.should.have.property('re', 0.4);
+			complex.should.have.property('im', -0.1);
 		});
 	});
 

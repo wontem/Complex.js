@@ -1,4 +1,5 @@
 window.Complex = (function() {
+	'use strict';
 
 	var math = (function () {
 		var math;

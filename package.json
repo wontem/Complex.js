@@ -1,0 +1,31 @@
+{
+  "name": "Complex",
+  "version": "0.0.0",
+  "description": "Complex numbers for js",
+  "main": "Complex.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wontem/Complex.js.git"
+  },
+  "keywords": [
+    "complex",
+    "numbers",
+    "vector"
+  ],
+  "author": "wontem",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wontem/Complex.js/issues"
+  },
+  "homepage": "https://github.com/wontem/Complex.js",
+  "devDependencies": {
+    "mocha": "^2.2.1",
+    "chai": "^2.1.1"
+  }
+}

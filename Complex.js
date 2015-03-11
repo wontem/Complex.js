@@ -93,8 +93,6 @@
 				return new Complex(value);
 			} else if (typeof value === 'string') {
 				return new Complex.fromString(value);
-			} else if (typeof value.length !== undefined) {
-				return new Complex(value[0], value[1]);
 			}
 		};
 

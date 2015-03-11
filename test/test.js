@@ -98,18 +98,6 @@ describe('Complex', function(){
 			complex.should.have.property('im', 0);
 		});
 
-		it('convert array into complex number', function() {
-			var complex;
-
-			complex = Complex.toComplex([1, 2]);
-			complex.should.have.property('re', 1);
-			complex.should.have.property('im', 2);
-
-			complex = Complex.toComplex([13.2]);
-			complex.should.have.property('re', 13.2);
-			complex.should.have.property('im', 0);
-		});
-
 		it('convert string into complex number', function() {
 			var complex = Complex.toComplex('-i-2+4-13.3i');
 			complex.should.have.property('re', 2);

@@ -83,28 +83,6 @@ describe('Complex', function(){
 		});
 	});
 
-	describe('.toComplex()', function() {
-		it('return the complex if it is argument', function() {
-			var complexA = new Complex(12, -1);
-			var complexB = Complex.toComplex(complexA);
-
-			complexA.should.be.equal(complexB);
-		});
-
-		it('convert number into complex number', function() {
-			var complex = Complex.toComplex(9);
-
-			complex.should.have.property('re', 9);
-			complex.should.have.property('im', 0);
-		});
-
-		it('convert string into complex number', function() {
-			var complex = Complex.toComplex('-i-2+4-13.3i');
-			complex.should.have.property('re', 2);
-			complex.should.have.property('im', -14.3);
-		});
-	});
-
 	describe('#abs', function() {
 		it('get absolute value', function() {
 			var complex = new Complex(3, 4);
@@ -141,6 +119,15 @@ describe('Complex', function(){
 			complex.arg = Math.PI;
 			complex.should.have.property('re', 5 * Math.cos(Math.PI));
 			complex.should.have.property('im', 5 * Math.sin(Math.PI));
+		});
+	});
+
+	describe('#toString()', function() {
+		it('return string', function() {
+			(new Complex(12, -3) + '').should.be.equal('12-3i');
+			(new Complex(0, -2) + '').should.be.equal('-2i');
+			(new Complex(5) + '').should.be.equal('5');
+			(new Complex(0) + '').should.be.equal('0');
 		});
 	});
 });

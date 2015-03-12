@@ -23,6 +23,30 @@
 			return math;
 		})();
 
+		var err = {
+			NUMBER_OR_COMPLEX: 'Arguments should be numbers or Complex'
+		};
+
+		var branch = {
+			COMPLEX: 0,
+			NUMBER: 1,
+			NUMBERS: 2
+		};
+
+		function getBranch (x, y) {
+			var br = -1;
+
+			if (x instanceof Complex) {
+				br = branch.COMPLEX;
+			} else if ((typeof x == 'number' || typeof x == 'undefined') && (typeof y == 'number' || typeof y == 'undefined')) {
+				br = (y || 0) === 0 ? branch.NUMBER : branch.NUMBERS;
+			} else {
+				throw new TypeError(err.NUMBER_OR_COMPLEX);
+			}
+
+			return br;
+		}
+
 		function parsePart (string) {
 			var number = parseFloat(string);
 			if (isNaN(number)) {
@@ -52,13 +76,7 @@
 		}
 
 		function Complex (re, im) {
-			if (re instanceof Complex) {
-				this.re = re.re;
-				this.im = re.im;
-			} else {
-				this.re = re === undefined ? 0 : re;
-				this.im = im === undefined ? 0 : im;
-			}
+			this.set.call(this, re, im);
 		}
 
 		Complex.fromPolar = function Complex (abs, arg) {
@@ -86,16 +104,6 @@
 			this.im = im;
 		};
 
-		Complex.toComplex = function (value) {
-			if (value instanceof Complex)  {
-				return value;
-			} else if (typeof value === 'number') {
-				return new Complex(value);
-			} else if (typeof value === 'string') {
-				return new Complex.fromString(value);
-			}
-		};
-
 		Complex.prototype =
 		Complex.fromPolar.prototype =
 		Complex.fromString.prototype = {
@@ -110,105 +118,126 @@
 			},
 
 			set: function(re, im) {
-				var complex;
-
-				if (typeof re === 'number') {
-					im = im === undefined ? 0 : im;
-					this.re = re;
-					this.im = im;
-				} else {
-					complex = Complex.toComplex(re);
-					this.re = complex.re;
-					this.im = complex.im;
+				switch (getBranch(re, im)) {
+					case branch.NUMBER:
+					case branch.NUMBERS:
+						this.re = re || 0;
+						this.im = im || 0;
+						break;
+					case branch.COMPLEX:
+						this.re = re.re;
+						this.im = re.im;
+						break;
 				}
 
 				return this;
 			},
 
 			add: function(re, im) {
-				var complex;
-
-				if (typeof re === 'number') {
-					im = im === undefined ? 0 : im;
-					this.re += re;
-					this.im += im;
-				} else {
-					complex = Complex.toComplex(re);
-					this.re += complex.re;
-					this.im += complex.im;
+				switch (getBranch(re, im)) {
+					case branch.NUMBER:
+					case branch.NUMBERS:
+						this.re += re || 0;
+						this.im += im || 0;
+						break;
+					case branch.COMPLEX:
+						this.re += re.re;
+						this.im += re.im;
+						break;
 				}
 
 				return this;
 			},
 
 			sub: function(re, im) {
-				var complex;
-
-				if (typeof re === 'number') {
-					im = im === undefined ? 0 : im;
-					this.re -= re;
-					this.im -= im;
-				} else {
-					complex = Complex.toComplex(re);
-					this.re -= complex.re;
-					this.im -= complex.im;
+				switch (getBranch(re, im)) {
+					case branch.NUMBER:
+					case branch.NUMBERS:
+						this.re -= re || 0;
+						this.im -= im || 0;
+						break;
+					case branch.COMPLEX:
+						this.re -= re.re;
+						this.im -= re.im;
+						break;
 				}
 
 				return this;
 			},
 
 			mul: function(re, im) {
-				var a, b, c, d, complex;
+				var a, b, c, d;
 
-				if (typeof re === 'number' && (im === undefined || im === 0)) {
-					this.re *= re;
-					this.im *= re;
-				} else {
-					complex = re instanceof Complex ? re : new Complex(re, im);
-					a = this.re;
-					b = this.im;
-					c = complex.re;
-					d = complex.im;
-
-					this.re = a * c - b * d;
-					this.im = b * c + a * d;
+				switch (getBranch(re, im)) {
+					case branch.NUMBER:
+						this.re *= re || 0;
+						this.im *= re || 0;
+						return this;
+					case branch.NUMBERS:
+						c = re || 0;
+						d = im || 0;
+						break;
+					case branch.COMPLEX:
+						c = re.re;
+						d = re.im;
+						break;
 				}
+
+				a = this.re;
+				b = this.im;
+				this.re = a * c - b * d;
+				this.im = b * c + a * d;
 
 				return this;
 			},
 
 			div: function(re, im) {
-				var a, b, c, d, divider, complex;
+				var a, b, c, d, divider;
 
-				if (typeof re === 'number' && (im === undefined || im === 0)) {
-					this.re /= re;
-					this.im /= re;
+				switch (getBranch(re, im)) {
+					case branch.NUMBER:
+						this.re /= re;
+						this.im /= re;
+						return this;
+					case branch.NUMBERS:
+						c = re || 0;
+						d = im || 0;
+						break;
+					case branch.COMPLEX:
+						c = re.re;
+						d = re.im;
+						break;
+				}
+
+				a = this.re;
+				b = this.im;
+				divider = c * c + d * d;
+
+				if (a === 1 && b === 0) {
+					this.re = c / divider;
+					this.im = -(d / divider);
 				} else {
-					complex = re instanceof Complex ? re : new Complex(re, im);
-					a = this.re;
-					b = this.im;
-					c = complex.re;
-					d = complex.im;
-					divider = c * c + d * d;
-
-					if (a === 1 && b === 0) {
-						this.re = c / divider;
-						this.im = -(d / divider);
-					} else {
-						this.re = (a * c + b * d) / divider;
-						this.im = (b * c - a * d) / divider;
-					}
+					this.re = (a * c + b * d) / divider;
+					this.im = (b * c - a * d) / divider;
 				}
 
 				return this;
 			},
 
 			dot: function(re, im) {
-				if (typeof re === 'number') {
-					im = im === undefined ? 0 : im;
-					return this.re * re + this.im * im;
+				switch (getBranch(re, im)) {
+					case branch.NUMBER:
+					case branch.NUMBERS:
+						re = re || 0;
+						im = im || 0;
+						break;
+					case branch.COMPLEX:
+						im = re.im;
+						re = re.re;
+						break;
 				}
-				return this.re * number.re + this.im * number.im;
+
+				return this.re * re + this.im * im;
 			},
 
 			conj: function() {
@@ -336,18 +365,21 @@
 			},
 
 			is: function(re, im) {
-				var result = false,
-					complex;
+				var result = false;
 
-				if (typeof re === 'number') {
-					im = im === undefined ? 0 : im;
-					result = this.im === im && this.re === re;
-				} else {
-					complex = Complex.toComplex(re);
-					result = this.im === complex.im && this.re === complex.re;
+				switch (getBranch(re, im)) {
+					case branch.NUMBER:
+					case branch.NUMBERS:
+						re = re || 0;
+						im = im || 0;
+						break;
+					case branch.COMPLEX:
+						im = re.im;
+						re = re.re;
+						break;
 				}
 
-				return result;
+				return this.im === im && this.re === re;
 			},
 
 			toString: function() {

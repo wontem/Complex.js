@@ -104,4 +104,43 @@ describe('Complex', function(){
 			complex.should.have.property('im', -14.3);
 		});
 	});
+
+	describe('#abs', function() {
+		it('get absolute value', function() {
+			var complex = new Complex(3, 4);
+			complex.should.have.property('abs', 5);
+		});
+
+		it('set absolute value', function() {
+			var complex = new Complex(0);
+
+			complex.abs = 10;
+			complex.should.have.property('re', 10);
+			complex.should.have.property('im', 0);
+
+			complex.abs = 0;
+			complex.should.have.property('re', 0);
+			complex.should.have.property('im', 0);
+		});
+	});
+
+	describe('#arg', function() {
+		it('get argument', function() {
+			var complex;
+
+			complex = new Complex(13, 13);
+			complex.should.have.property('arg', Math.PI / 4);
+
+			complex = new Complex(-10, 0);
+			complex.should.have.property('arg', Math.PI);
+		});
+
+		it('set argument', function() {
+			var complex = new Complex(3, 4);
+
+			complex.arg = Math.PI;
+			complex.should.have.property('re', 5 * Math.cos(Math.PI));
+			complex.should.have.property('im', 5 * Math.sin(Math.PI));
+		});
+	});
 });

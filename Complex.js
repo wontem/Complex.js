@@ -24,28 +24,8 @@
 		})();
 
 		var err = {
-			NUMBER_OR_COMPLEX: 'Arguments should be numbers or Complex'
+			NUMBER_OR_COMPLEX: 'Arguments should be numbers, Complex or string'
 		};
-
-		var branch = {
-			COMPLEX: 0,
-			NUMBER: 1,
-			NUMBERS: 2
-		};
-
-		function getBranch (x, y) {
-			var br = -1;
-
-			if (x instanceof Complex) {
-				br = branch.COMPLEX;
-			} else if ((typeof x == 'number' || typeof x == 'undefined') && (typeof y == 'number' || typeof y == 'undefined')) {
-				br = (y || 0) === 0 ? branch.NUMBER : branch.NUMBERS;
-			} else {
-				throw new TypeError(err.NUMBER_OR_COMPLEX);
-			}
-
-			return br;
-		}
 
 		function parsePart (string) {
 			var number = parseFloat(string);
@@ -72,6 +52,38 @@
 						Complex.prototype[alias] = Complex.prototype[method];
 					}
 				}
+			}
+		}
+
+		function wrapToParseArgs (method) {
+			return function (a, b) {
+				var re = 0;
+				var im = 0;
+				var complex;
+
+				if (a instanceof Complex) {
+					re = a.re;
+					im = a.im;
+				} else if ((typeof a == 'number' || typeof a == 'undefined') && (typeof b == 'number' || typeof b == 'undefined')) {
+					re = a || re;
+					im = b || im;
+				} else if (typeof a == 'string') {
+					complex = new Complex.fromString(a);
+					re = complex.re;
+					im = complex.im;
+				} else {
+					throw new TypeError(err.NUMBER_OR_COMPLEX);
+				}
+
+				return method.call(this, re, im);
+			};
+		}
+
+		function merge (object, source, customizer) {
+			var key;
+
+			for (key in source) {
+				object[key] = customizer(source[key]);
 			}
 		}
 
@@ -117,141 +129,8 @@
 				return new Complex(this);
 			},
 
-			set: function(re, im) {
-				switch (getBranch(re, im)) {
-					case branch.NUMBER:
-					case branch.NUMBERS:
-						this.re = re || 0;
-						this.im = im || 0;
-						break;
-					case branch.COMPLEX:
-						this.re = re.re;
-						this.im = re.im;
-						break;
-				}
-
-				return this;
-			},
-
-			add: function(re, im) {
-				switch (getBranch(re, im)) {
-					case branch.NUMBER:
-					case branch.NUMBERS:
-						this.re += re || 0;
-						this.im += im || 0;
-						break;
-					case branch.COMPLEX:
-						this.re += re.re;
-						this.im += re.im;
-						break;
-				}
-
-				return this;
-			},
-
-			sub: function(re, im) {
-				switch (getBranch(re, im)) {
-					case branch.NUMBER:
-					case branch.NUMBERS:
-						this.re -= re || 0;
-						this.im -= im || 0;
-						break;
-					case branch.COMPLEX:
-						this.re -= re.re;
-						this.im -= re.im;
-						break;
-				}
-
-				return this;
-			},
-
-			mul: function(re, im) {
-				var a, b, c, d;
-
-				switch (getBranch(re, im)) {
-					case branch.NUMBER:
-						this.re *= re || 0;
-						this.im *= re || 0;
-						return this;
-					case branch.NUMBERS:
-						c = re || 0;
-						d = im || 0;
-						break;
-					case branch.COMPLEX:
-						c = re.re;
-						d = re.im;
-						break;
-				}
-
-				a = this.re;
-				b = this.im;
-				this.re = a * c - b * d;
-				this.im = b * c + a * d;
-
-				return this;
-			},
-
-			div: function(re, im) {
-				var a, b, c, d, divider;
-
-				switch (getBranch(re, im)) {
-					case branch.NUMBER:
-						this.re /= re;
-						this.im /= re;
-						return this;
-					case branch.NUMBERS:
-						c = re || 0;
-						d = im || 0;
-						break;
-					case branch.COMPLEX:
-						c = re.re;
-						d = re.im;
-						break;
-				}
-
-				a = this.re;
-				b = this.im;
-				divider = c * c + d * d;
-
-				if (a === 1 && b === 0) {
-					this.re = c / divider;
-					this.im = -(d / divider);
-				} else {
-					this.re = (a * c + b * d) / divider;
-					this.im = (b * c - a * d) / divider;
-				}
-
-				return this;
-			},
-
-			dot: function(re, im) {
-				switch (getBranch(re, im)) {
-					case branch.NUMBER:
-					case branch.NUMBERS:
-						re = re || 0;
-						im = im || 0;
-						break;
-					case branch.COMPLEX:
-						im = re.im;
-						re = re.re;
-						break;
-				}
-
-				return this.re * re + this.im * im;
-			},
-
 			conj: function() {
 				this.im = -this.im;
-				return this;
-			},
-
-			pow: function(re, im) {
-				var x = new Complex(Math.log(this.abs), this.arg).mul(re, im),
-					r = Math.exp(x.re);
-
-				this.re = r * math.cos(x.im);
-				this.im = r * math.sin(x.im);
-
 				return this;
 			},
 
@@ -401,6 +280,84 @@
 			}
 		};
 
+		var methodsWithComplexArgs = {
+			set: function(re, im) {
+				this._re = re;
+				this._im = im;
+
+				return this;
+			},
+
+			add: function(re, im) {
+				this._re += re;
+				this._im += im;
+
+				return this;
+			},
+
+			sub: function(re, im) {
+				this._re -= re;
+				this._im -= im;
+
+				return this;
+			},
+
+			mul: function(re, im) {
+				var x, y;
+
+				if (!im) {
+					this._re *= re;
+					this._im *= re;
+				} else {
+					x = this._re;
+					y = this._im;
+
+					this._re = x * re - y * im;
+					this._im = y * re + x * im;
+				}
+
+				return this;
+			},
+
+			div: function(re, im) {
+				var x, y, divider;
+
+				if (!im) {
+					this._re /= re;
+					this._im /= re;
+				} else {
+					x = this._re;
+					y = this._im;
+
+					divider = re * re + im * im;
+
+					if (x === 1 && y === 0) {
+						this._re = re / divider;
+						this._im = -(im / divider);
+					} else {
+						this._re = (x * re + y * im) / divider;
+						this._im = (y * re - x * im) / divider;
+					}
+				}
+
+				return this;
+			},
+
+			dot: function(re, im) {
+				return this._re * re + this._im * im;
+			},
+
+			pow: function(re, im) {
+				var x = new Complex(Math.log(this.abs), this.arg).mul(re, im),
+					r = Math.exp(x.re);
+
+				this._re = r * math.cos(x.im);
+				this._im = r * math.sin(x.im);
+
+				return this;
+			}
+		};
+
 		var properties = {
 			re: {
 				get: function () {
@@ -452,6 +409,8 @@
 			arg: ['angle', 'phase'],
 			abs: ['magnitude']
 		};
+
+		merge(Complex.prototype, methodsWithComplexArgs, wrapToParseArgs);
 
 		Object.defineProperties(Complex.prototype, properties);
 		registerAliases(aliases, properties);

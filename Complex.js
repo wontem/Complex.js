@@ -1,5 +1,5 @@
 (function(global) {
-	var Complex = (function() {
+	var Complex = (function(buildOptions) {
 		'use strict';
 
 		var math = (function () {
@@ -23,8 +23,12 @@
 			return math;
 		})();
 
-		var err = {
-			NUMBER_OR_COMPLEX: 'Arguments should be numbers, Complex or string'
+		var Enum = {
+			errors: {
+				NUMBER_OR_COMPLEX: 'Arguments should be numbers, Complex or string',
+				WRONG_ARGUMENTS_NUMBER: 'Must be more than one arguments',
+				WRONG_OPERATOR: 'Operator must be a function'
+			}
 		};
 
 		function parsePart (string) {
@@ -39,89 +43,113 @@
 			return number;
 		}
 
-		function registerAliases (options, properties) {
-			var method, i, aliases, alias;
-			for (method in options) {
-				aliases = options[method];
+		function registerAliases (publics, map, properties) {
+			var methodName, i, aliases, alias;
+			for (methodName in map) {
+				aliases = map[methodName];
 				for (i = 0; i < aliases.length; i++) {
 					alias = aliases[i];
 
-					if (properties[method]) {
-						Object.defineProperty(Complex.prototype, alias, properties[method]);
+					if (properties && properties[methodName]) {
+						Object.defineProperty(publics, alias, properties[methodName]);
 					} else {
-						Complex.prototype[alias] = Complex.prototype[method];
+						publics[alias] = publics[methodName];
 					}
 				}
 			}
 		}
 
 		function wrapToParseArgs (method) {
-			return function (a, b) {
+			return function validate (a, b) {
 				var re = 0;
 				var im = 0;
-				var complex;
+
+				var values;
+				var value;
+				var i;
 
 				if (a instanceof Complex) {
-					re = a.re;
-					im = a.im;
-				} else if ((typeof a == 'number' || typeof a == 'undefined') && (typeof b == 'number' || typeof b == 'undefined')) {
+					re = a._re;
+					im = a._im;
+				} else if ((typeof a == 'number' || a == null) && (typeof b == 'number' || b == null)) {
 					re = a || re;
 					im = b || im;
 				} else if (typeof a == 'string') {
-					complex = new Complex.fromString(a);
-					re = complex.re;
-					im = complex.im;
+					values = a.match(/([-+]?(?:\d*\.?\d+)?i)|([-+]?\d*\.?\d+)/g);
+					for (i = 0; i < values.length; i++) {
+						value = parsePart(values[i]);
+						if (values[i].indexOf('i') !== -1) {
+							im += value;
+						} else {
+							re += value;
+						}
+					}
+				} else if (Object.prototype.toString.call(a) == '[object Array]') {
+					re = +a[0] || re;
+					im = +a[1] || im;
 				} else {
-					throw new TypeError(err.NUMBER_OR_COMPLEX);
+					throw new TypeError(Enum.errors.NUMBER_OR_COMPLEX);
 				}
 
 				return method.call(this, re, im);
 			};
 		}
 
+		function wrapOneArgumentMethods (method) {
+			return calcExpr.bind(null, method);
+		}
+
+		function calcExpr (operator, firstOperand) {
+			var REST_INDEX = 2;
+
+			if (typeof operator != 'function') {
+				throw new TypeError(Enum.errors.WRONG_OPERATOR);
+			}
+
+			if (arguments.length < REST_INDEX) {
+				throw new RangeError(Enum.errors.WRONG_ARGUMENTS_NUMBER);
+			}
+
+			var i;
+			var length = arguments.length;
+
+			var operands = new Array(length - REST_INDEX);
+			var result = new Complex(firstOperand);
+
+			for (i = REST_INDEX; i < length; i++) {
+				operator.call(result, arguments[i]);
+			}
+
+			return result;
+		}
+
 		function merge (object, source, customizer) {
 			var key;
 
 			for (key in source) {
-				object[key] = customizer(source[key]);
+				object[key] = typeof customizer == 'function' ? customizer(source[key]) : source[key];
 			}
 		}
 
 		function Complex (re, im) {
-			this.set.call(this, re, im);
+			if (this instanceof Complex) {
+				this.set.call(this, re, im);
+			} else {
+				return calcExpr.apply(null, arguments);
+			}
 		}
 
-		Complex.fromPolar = function Complex (abs, arg) {
+		function ComplexFromPolar (abs, arg) {
 			this.re = abs * math.cos(arg);
 			this.im = abs * math.sin(arg);
+		}
+
+		var statics = {
+			fromPolar: ComplexFromPolar
 		};
 
-		Complex.fromString = function Complex (string) {
-			var complexRegexp = /([-+]?(?:\d*\.?\d+)?i)|([-+]?\d*\.?\d+)/g,
-				values = string.match(complexRegexp),
-				i, value,
-				re = 0,
-				im = 0;
-
-			for (i = 0; i < values.length; i++) {
-				value = parsePart(values[i]);
-				if (values[i].indexOf('i') !== -1) {
-					im += value;
-				} else {
-					re += value;
-				}
-			}
-
-			this.re = re;
-			this.im = im;
-		};
-
-		Complex.prototype =
-		Complex.fromPolar.prototype =
-		Complex.fromString.prototype = {
-			constructor: Complex,
-
-			getVector: function() {
+		var publics = {
+			getArray: function() {
 				return [this.re, this.im];
 			},
 
@@ -280,7 +308,7 @@
 			}
 		};
 
-		var methodsWithComplexArgs = {
+		var publicsWithComplexArg = {
 			set: function(re, im) {
 				this._re = re;
 				this._im = im;
@@ -305,7 +333,7 @@
 			mul: function(re, im) {
 				var x, y;
 
-				if (!im) {
+				if (im === 0) {
 					this._re *= re;
 					this._im *= re;
 				} else {
@@ -322,7 +350,7 @@
 			div: function(re, im) {
 				var x, y, divider;
 
-				if (!im) {
+				if (im === 0) {
 					this._re /= re;
 					this._im /= re;
 				} else {
@@ -410,13 +438,53 @@
 			abs: ['magnitude']
 		};
 
-		merge(Complex.prototype, methodsWithComplexArgs, wrapToParseArgs);
+		// Building
 
-		Object.defineProperties(Complex.prototype, properties);
-		registerAliases(aliases, properties);
+		function build (options) {
+			var constructor = options.constructors[0]; // First constructor is main
+			var length = options.constructors.length;
+			var i;
 
-		return Complex;
-	})();
+			options.publics.constructor = constructor;
+
+			for (i = 0; i < length; i++) {
+				options.constructors[i].prototype = options.publics;
+			}
+
+			if (options.statics) {
+				merge(constructor, options.statics);
+			}
+
+			if (options.publics) {
+
+				if (options.properties) {
+					Object.defineProperties(options.publics, options.properties);
+				}
+
+				if (options.aliases) {
+					registerAliases(options.publics, options.aliases, options.properties);
+				}
+			}
+
+			return constructor;
+		}
+
+		merge(publics, publicsWithComplexArg, wrapToParseArgs);
+		merge(statics, {
+			sum: publics.add,
+			diff: publics.sub,
+			prod: publics.mul,
+			quot: publics.div
+		}, wrapOneArgumentMethods);
+
+		return build({
+			constructors: [Complex, ComplexFromPolar],
+			publics: publics,
+			statics: statics,
+			properties: properties,
+			aliases: aliases
+		});
+	})({});
 
 	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
 		module.exports = Complex;

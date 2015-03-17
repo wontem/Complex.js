@@ -26,6 +26,7 @@
   "homepage": "https://github.com/wontem/Complex.js",
   "devDependencies": {
     "mocha": "^2.2.1",
-    "chai": "^2.1.1"
+    "chai": "^2.1.1",
+    "blanket": "^1.1.6"
   }
 }

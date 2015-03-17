@@ -85,8 +85,8 @@
 						}
 					}
 				} else if (Object.prototype.toString.call(a) == '[object Array]') {
-					re = +a[0] || re;
-					im = +a[1] || im;
+					re = +a[0];
+					im = +a[1];
 				} else {
 					throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
 				}

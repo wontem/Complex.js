@@ -417,7 +417,6 @@
 
 		var aliases = {
 			clone: ['copy'],
-			is: ['equals'],
 			re: ['x'],
 			im: ['y'],
 			arg: ['angle', 'phase'],

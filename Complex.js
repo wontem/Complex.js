@@ -25,7 +25,7 @@
 
 		var Enum = {
 			errors: {
-				NUMBER_OR_COMPLEX: 'Arguments should be numbers, Complex or string',
+				ONLY_COMPLEX_LIKE: 'Arguments should be numbers or Complex-like',
 				WRONG_ARGUMENTS_NUMBER: 'Must be more than one arguments',
 				WRONG_OPERATOR: 'Operator must be a function'
 			}
@@ -88,7 +88,7 @@
 					re = +a[0] || re;
 					im = +a[1] || im;
 				} else {
-					throw new TypeError(Enum.errors.NUMBER_OR_COMPLEX);
+					throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
 				}
 
 				return method.call(this, re, im);

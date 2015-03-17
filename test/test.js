@@ -1,8 +1,13 @@
+var blanket = require('blanket')({
+	pattern: function (filename) {
+		return !/node_modules/.test(filename);
+	}
+});
 var should = require('chai').should();
 
-describe('Complex', function(){
-	var Complex = require('../Complex');
+var Complex = require('../Complex');
 
+describe('Complex', function(){
 	it('calculate expression', function() {
 		var complex = Complex(Complex.prototype.add, 1, [2, 3], '4 + 5i', new Complex(6, 7));
 
@@ -11,11 +16,20 @@ describe('Complex', function(){
 		complex.should.have.property('re', 13);
 		complex.should.have.property('im', 15);
 
-
 		complex = Complex(Complex.prototype.add, 1, Complex(Complex.prototype.mul, [2, 3], '4 + 5i'), new Complex(6, 7));
 
 		complex.should.have.property('re', 0);
 		complex.should.have.property('im', 29);
+	});
+
+	it('throw error', function() {
+		(function () {
+			Complex('not funtion', 12, 3);
+		}).should.throw(TypeError);
+
+		(function () {
+			Complex(Complex.prototype.add);
+		}).should.throw(RangeError);
 	});
 
 	describe('constructor', function(){
@@ -64,6 +78,13 @@ describe('Complex', function(){
 			complex.should.have.property('im', -0.1);
 		});
 
+		it('from array', function() {
+			var complex = new Complex([2, -1.3]);
+
+			complex.should.have.property('re', 2);
+			complex.should.have.property('im', -1.3);
+		});
+
 		it('clone from complex', function(){
 			var complex = new Complex(2, -1);
 			var complexCopy = new Complex(complex);
@@ -74,11 +95,10 @@ describe('Complex', function(){
 			complexCopy.should.have.property('im', complex.im);
 		});
 
-		it('from array', function() {
-			var complex = new Complex([2, -1.3]);
-
-			complex.should.have.property('re', 2);
-			complex.should.have.property('im', -1.3);
+		it('throw error', function() {
+			(function () {
+				new Complex(false);
+			}).should.throw(TypeError);
 		});
 	});
 
@@ -105,7 +125,34 @@ describe('Complex', function(){
 			complex.should.have.property('re', 13);
 			complex.should.have.property('im', 15);
 		});
-	})
+	});
+
+	describe('.diff()', function() {
+		it('calculate difference of arguments', function() {
+			var complex = Complex.diff(1, [2, 3], '4 + 5i', new Complex(6, 7));
+
+			complex.should.have.property('re', -11);
+			complex.should.have.property('im', -15);
+		});
+	});
+
+	describe('.prod()', function() {
+		it('calculate product of arguments', function() {
+			var complex = Complex.prod([2, 3], new Complex(4, 5), 2);
+
+			complex.should.have.property('re', -14);
+			complex.should.have.property('im', 44);
+		});
+	});
+
+	describe('.quot()', function() {
+		it('calculate quotient of arguments', function() {
+			var complex = Complex.quot(1, [-2, 3], '4 - 5i', new Complex(6, -7), 1);
+
+			complex.should.have.property('re', -0.0027370047456130673);
+			complex.should.have.property('im', -0.0038185630725085540);
+		});
+	});
 
 	describe('#abs', function() {
 		it('get absolute value', function() {
@@ -146,12 +193,55 @@ describe('Complex', function(){
 		});
 	});
 
+	describe('#clone()', function() {
+		it('return clone of complex', function() {
+			var complex = new Complex(12, 14);
+			var clone = complex.clone();
+
+			clone.should.not.be.equal(complex);
+			clone.should.have.property('re', complex.re);
+			clone.should.have.property('im', complex.im);
+		});
+	});
+
+	describe('#toArray', function() {
+		it('return array', function() {
+			var complex = new Complex(12, 14);
+			var array = complex.toArray();
+
+			array.should.have.property(0, 12);
+			array.should.have.property(1, 14);
+		});
+	});
+
 	describe('#toString()', function() {
 		it('return string', function() {
 			(new Complex(12, -3) + '').should.be.equal('12-3i');
 			(new Complex(0, -2) + '').should.be.equal('-2i');
+			(new Complex(0, 3) + '').should.be.equal('3i');
 			(new Complex(5) + '').should.be.equal('5');
 			(new Complex(0) + '').should.be.equal('0');
+		});
+	});
+
+	describe('#.dot()', function() {
+		it('calculate dot product', function() {
+			(new Complex(0, -1).dot(-2, 3)).should.be.equal(-3);
+		});
+	});
+
+	describe('#.equal()', function() {
+		it('check is same re and im parts', function() {
+			new Complex(-1, 3).equal(new Complex(-1, 3)).should.be.true;
+			new Complex(-1, 3).equal(new Complex(1, 3)).should.be.false;
+		});
+	});
+
+	describe('#.conj()', function() {
+		it('conjugate complex', function() {
+			var complex = new Complex(12, 128).conj();
+
+			complex.should.have.property('im', -128);
 		});
 	});
 });

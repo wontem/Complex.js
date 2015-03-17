@@ -149,7 +149,25 @@
 		};
 
 		var publics = {
-			getArray: function() {
+			toString: function() {
+				var text = '',
+					re = this.re,
+					im = this.im;
+
+				if (re !== 0) {
+					text += re;
+				}
+
+				if (im > 0) {
+					text += (re === 0 ? '' : '+') + (im === 1 ? '' : im) + 'i';
+				} else if (im < 0) {
+					text += im + 'i';
+				}
+
+				return text || '0';
+			},
+
+			toArray: function() {
 				return [this.re, this.im];
 			},
 
@@ -269,42 +287,6 @@
 				Complex.fromPolar.call(this, Math.exp(this.re), this.im);
 
 				return this;
-			},
-
-			is: function(re, im) {
-				var result = false;
-
-				switch (getBranch(re, im)) {
-					case branch.NUMBER:
-					case branch.NUMBERS:
-						re = re || 0;
-						im = im || 0;
-						break;
-					case branch.COMPLEX:
-						im = re.im;
-						re = re.re;
-						break;
-				}
-
-				return this.im === im && this.re === re;
-			},
-
-			toString: function() {
-				var text = '',
-					re = this.re,
-					im = this.im;
-
-				if (re !== 0) {
-					text += re;
-				}
-
-				if (im > 0) {
-					text += (re === 0 ? '' : '+') + (im === 1 ? '' : im) + 'i';
-				} else if (im < 0) {
-					text += im + 'i';
-				}
-
-				return text || '0';
 			}
 		};
 
@@ -383,6 +365,10 @@
 				this._im = r * math.sin(x.im);
 
 				return this;
+			},
+
+			equal: function(re, im) {
+				return this._im === im && this._re === re;
 			}
 		};
 

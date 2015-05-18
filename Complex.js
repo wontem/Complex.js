@@ -59,39 +59,43 @@
 			}
 		}
 
-		function wrapToParseArgs (method) {
-			return function validate (a, b) {
-				var re = 0;
-				var im = 0;
+		function parseAndRun (callback, a, b) {
+			var re = 0;
+			var im = 0;
 
-				var values;
-				var value;
-				var i;
+			var values;
+			var value;
+			var i;
 
-				if (a instanceof Complex) {
-					re = a._re;
-					im = a._im;
-				} else if ((typeof a == 'number' || a == null) && (typeof b == 'number' || b == null)) {
-					re = a || re;
-					im = b || im;
-				} else if (typeof a == 'string') {
-					values = a.match(/([-+]?(?:\d*\.?\d+)?i)|([-+]?\d*\.?\d+)/g);
-					for (i = 0; i < values.length; i++) {
-						value = parsePart(values[i]);
-						if (values[i].indexOf('i') !== -1) {
-							im += value;
-						} else {
-							re += value;
-						}
+			if (a instanceof Complex) {
+				re = a._re;
+				im = a._im;
+			} else if ((typeof a == 'number' || a == null) && (typeof b == 'number' || b == null)) {
+				re = a || re;
+				im = b || im;
+			} else if (typeof a == 'string') {
+				values = a.match(/([-+]?(?:\d*\.?\d+)?i)|([-+]?\d*\.?\d+)/g);
+				for (i = 0; i < values.length; i++) {
+					value = parsePart(values[i]);
+					if (values[i].indexOf('i') !== -1) {
+						im += value;
+					} else {
+						re += value;
 					}
-				} else if (Object.prototype.toString.call(a) == '[object Array]') {
-					re = +a[0];
-					im = +a[1];
-				} else {
-					throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
 				}
+			} else if (Object.prototype.toString.call(a) == '[object Array]') {
+				re = +a[0];
+				im = +a[1];
+			} else {
+				throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
+			}
 
-				return method.call(this, re, im);
+			return callback(re, im);
+		}
+
+		function wrapToParseArgs (method) {
+			return function wrap (a, b) {
+				return parseAndRun(method.bind(this), a, b);
 			};
 		}
 

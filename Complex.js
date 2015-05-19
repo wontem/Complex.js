@@ -90,12 +90,12 @@
 				throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
 			}
 
-			return callback(re, im);
+			return callback.call(this, re, im);
 		}
 
 		function wrapToParseArgs (method) {
 			return function wrap (a, b) {
-				return parseAndRun(method.bind(this), a, b);
+				return parseAndRun.call(this, method, a, b);
 			};
 		}
 

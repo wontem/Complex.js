@@ -59,22 +59,21 @@
 			}
 		}
 
-		function parseAndRun (callback, a, b) {
-			var re = 0;
-			var im = 0;
+		var parsers = {
+			complex: function (z, callback, complex) {
+				return callback.call(z, complex._re, complex._im);
+			},
+			numbers: function (z, callback, re, im) {
+				return callback.call(z, re || 0, im || 0);
+			},
+			string: function (z, callback, string) {
+				var re = 0;
+				var im = 0;
 
-			var values;
-			var value;
-			var i;
+				var i;
+				var value;
 
-			if (a instanceof Complex) {
-				re = a._re;
-				im = a._im;
-			} else if ((typeof a == 'number' || a == null) && (typeof b == 'number' || b == null)) {
-				re = a || re;
-				im = b || im;
-			} else if (typeof a == 'string') {
-				values = a.match(/([-+]?(?:\d*\.?\d+)?i)|([-+]?\d*\.?\d+)/g);
+				var values = string.match(/([-+]?(?:\d*\.?\d+)?i)|([-+]?\d*\.?\d+)/g);
 				for (i = 0; i < values.length; i++) {
 					value = parsePart(values[i]);
 					if (values[i].indexOf('i') !== -1) {
@@ -83,19 +82,35 @@
 						re += value;
 					}
 				}
+
+				return callback.call(z, re, im);
+			},
+			array: function (z, callback, array) {
+				return callback.call(z, +array[0], +array[1]);
+			}
+		};
+
+		function parseAndRun (z, callback, a, b) {
+			var parser;
+
+			if (a instanceof Complex) {
+				parser = parsers.complex;
+			} else if ((typeof a == 'number' || a == null) && (typeof b == 'number' || b == null)) {
+				parser = parsers.numbers;
+			} else if (typeof a == 'string') {
+				parser = parsers.string;
 			} else if (Object.prototype.toString.call(a) == '[object Array]') {
-				re = +a[0];
-				im = +a[1];
+				parser = parsers.array;
 			} else {
 				throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
 			}
 
-			return callback.call(this, re, im);
+			return parser(z, callback, a, b);
 		}
 
 		function wrapToParseArgs (method) {
 			return function wrap (a, b) {
-				return parseAndRun.call(this, method, a, b);
+				return parseAndRun(this, method, a, b);
 			};
 		}
 

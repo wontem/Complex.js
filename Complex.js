@@ -288,7 +288,7 @@
 			},
 
 			exp: function() {
-				Complex.fromPolar.call(this, Math.exp(this.re), this.im);
+				ComplexFromPolar.call(this, Math.exp(this.re), this.im);
 
 				return this;
 			}
@@ -403,7 +403,7 @@
 				},
 
 				set: function (abs) {
-					Complex.fromPolar.call(this, abs, this.arg);
+					ComplexFromPolar.call(this, abs, this.arg);
 				}
 			},
 
@@ -413,7 +413,7 @@
 				},
 
 				set: function (arg) {
-					Complex.fromPolar.call(this, this.abs, arg);
+					ComplexFromPolar.call(this, this.abs, arg);
 				}
 			}
 

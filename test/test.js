@@ -20,6 +20,14 @@ describe('Complex', function(){
 
 		complex.should.have.property('re', 0);
 		complex.should.have.property('im', 29);
+
+		complex = Complex(function (re, im) {
+			this.re %= re;
+			this.im %= im;
+		}, [13, 17], '19i - 2');
+
+		complex.should.have.property('re', 1);
+		complex.should.have.property('im', 17);
 	});
 
 	it('throw error', function() {

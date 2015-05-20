@@ -60,13 +60,13 @@
 		}
 
 		var parsers = {
-			complex: function (z, callback, complex) {
-				return callback.call(z, complex._re, complex._im);
+			complex: function (acc, callback, complex) {
+				return callback.call(acc, complex._re, complex._im);
 			},
-			numbers: function (z, callback, re, im) {
-				return callback.call(z, re || 0, im || 0);
+			numbers: function (acc, callback, re, im) {
+				return callback.call(acc, re || 0, im || 0);
 			},
-			string: function (z, callback, string) {
+			string: function (acc, callback, string) {
 				var re = 0;
 				var im = 0;
 
@@ -83,14 +83,14 @@
 					}
 				}
 
-				return callback.call(z, re, im);
+				return callback.call(acc, re, im);
 			},
-			array: function (z, callback, array) {
-				return callback.call(z, +array[0], +array[1]);
+			array: function (acc, callback, array) {
+				return callback.call(acc, +array[0], +array[1]);
 			}
 		};
 
-		function parseAndRun (z, callback, a, b) {
+		function parseAndRun (acc, callback, a, b) {
 			var parser;
 
 			if (a instanceof Complex) {
@@ -105,7 +105,7 @@
 				throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
 			}
 
-			return parser(z, callback, a, b);
+			return parser(acc, callback, a, b);
 		}
 
 		function wrapToParseArgs (method) {

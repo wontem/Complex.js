@@ -59,7 +59,7 @@
 			}
 		}
 
-		var parsers = {
+		var validators = {
 			complex: function (acc, callback, complex) {
 				return callback.call(acc, complex._re, complex._im);
 			},
@@ -90,17 +90,17 @@
 			}
 		};
 
-		function parseAndRun (acc, callback, a, b) {
+		function validateAndRun (acc, callback, a, b) {
 			var parser;
 
 			if (a instanceof Complex) {
-				parser = parsers.complex;
+				parser = validators.complex;
 			} else if ((typeof a == 'number' || a == null) && (typeof b == 'number' || b == null)) {
-				parser = parsers.numbers;
+				parser = validators.numbers;
 			} else if (typeof a == 'string') {
-				parser = parsers.string;
+				parser = validators.string;
 			} else if (Object.prototype.toString.call(a) == '[object Array]') {
-				parser = parsers.array;
+				parser = validators.array;
 			} else {
 				throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
 			}
@@ -110,7 +110,7 @@
 
 		function wrapToParseArgs (method) {
 			return function wrap (a, b) {
-				return parseAndRun(this, method, a, b);
+				return validateAndRun(this, method, a, b);
 			};
 		}
 

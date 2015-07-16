@@ -126,20 +126,18 @@
 
 		function calcExpr (operator, firstOperand) {
 			var REST_INDEX = 2;
+			var length = arguments.length;
 
 			if (typeof operator != 'function') {
 				throw new TypeError(Enum.errors.WRONG_OPERATOR);
 			}
 
-			if (arguments.length < REST_INDEX) {
+			if (length < REST_INDEX) {
 				throw new RangeError(Enum.errors.WRONG_ARGUMENTS_NUMBER);
 			}
 
-			var i;
-			var length = arguments.length;
-
-			var operands = new Array(length - REST_INDEX);
 			var result = new Complex(firstOperand);
+			var i;
 
 			for (i = REST_INDEX; i < length; i++) {
 				operator.call(result, arguments[i]);

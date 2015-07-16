@@ -60,13 +60,13 @@
 		}
 
 		var validators = {
-			complex: function (acc, callback, complex) {
-				return callback.call(acc, complex._re, complex._im);
+			complex: function (callback, complex) {
+				return callback(complex._re, complex._im);
 			},
-			numbers: function (acc, callback, re, im) {
-				return callback.call(acc, re || 0, im || 0);
+			numbers: function (callback, re, im) {
+				return callback(re || 0, im || 0);
 			},
-			string: function (acc, callback, string) {
+			string: function (callback, string) {
 				var re = 0;
 				var im = 0;
 
@@ -83,14 +83,14 @@
 					}
 				}
 
-				return callback.call(acc, re, im);
+				return callback(re, im);
 			},
-			array: function (acc, callback, array) {
-				return callback.call(acc, +array[0], +array[1]);
+			array: function (callback, array) {
+				return callback(+array[0], +array[1]);
 			}
 		};
 
-		function validateAndRun (acc, callback, a, b) {
+		function validateAndRun (callback, a, b) {
 			var validator;
 
 			switch (true) {
@@ -111,12 +111,12 @@
 				break;
 			}
 
-			return validator(acc, callback, a, b);
+			return validator(callback, a, b);
 		}
 
 		function wrapToValidateArgs (method) {
 			return function wrap (a, b) {
-				return validateAndRun(this, method, a, b);
+				return validateAndRun(method.bind(this), a, b);
 			};
 		}
 

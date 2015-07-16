@@ -91,30 +91,30 @@
 		};
 
 		function validateAndRun (acc, callback, a, b) {
-			var parser;
+			var validator;
 
 			switch (true) {
 			case a instanceof Complex:
-				parser = validators.complex;
+				validator = validators.complex;
 				break;
 			case (typeof a == 'number' || a == null) && (typeof b == 'number' || b == null):
-				parser = validators.numbers;
+				validator = validators.numbers;
 				break;
 			case typeof a == 'string':
-				parser = validators.string;
+				validator = validators.string;
 				break;
 			case Object.prototype.toString.call(a) == '[object Array]':
-				parser = validators.array;
+				validator = validators.array;
 				break;
 			default:
 				throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
 				break;
 			}
 
-			return parser(acc, callback, a, b);
+			return validator(acc, callback, a, b);
 		}
 
-		function wrapToParseArgs (method) {
+		function wrapToValidateArgs (method) {
 			return function wrap (a, b) {
 				return validateAndRun(this, method, a, b);
 			};
@@ -479,7 +479,7 @@
 			return constructor;
 		}
 
-		merge(publics, publicsWithComplexArg, wrapToParseArgs);
+		merge(publics, publicsWithComplexArg, wrapToValidateArgs);
 		merge(statics, {
 			sum: publics.add,
 			diff: publics.sub,

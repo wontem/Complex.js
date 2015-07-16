@@ -93,16 +93,22 @@
 		function validateAndRun (acc, callback, a, b) {
 			var parser;
 
-			if (a instanceof Complex) {
+			switch (true) {
+			case a instanceof Complex:
 				parser = validators.complex;
-			} else if ((typeof a == 'number' || a == null) && (typeof b == 'number' || b == null)) {
+				break;
+			case (typeof a == 'number' || a == null) && (typeof b == 'number' || b == null):
 				parser = validators.numbers;
-			} else if (typeof a == 'string') {
+				break;
+			case typeof a == 'string':
 				parser = validators.string;
-			} else if (Object.prototype.toString.call(a) == '[object Array]') {
+				break;
+			case Object.prototype.toString.call(a) == '[object Array]':
 				parser = validators.array;
-			} else {
+				break;
+			default:
 				throw new TypeError(Enum.errors.ONLY_COMPLEX_LIKE);
+				break;
 			}
 
 			return parser(acc, callback, a, b);

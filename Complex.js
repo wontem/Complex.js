@@ -139,8 +139,10 @@
 			var result = new Complex(firstOperand);
 			var i;
 
+			operator = wrapToValidateArgs(operator).bind(result);
+
 			for (i = REST_INDEX; i < length; i++) {
-				operator.call(result, arguments[i]);
+				operator(arguments[i]);
 			}
 
 			return result;
@@ -479,10 +481,10 @@
 
 		merge(publics, publicsWithComplexArg, wrapToValidateArgs);
 		merge(statics, {
-			sum: publics.add,
-			diff: publics.sub,
-			prod: publics.mul,
-			quot: publics.div
+			sum: publicsWithComplexArg.add,
+			diff: publicsWithComplexArg.sub,
+			prod: publicsWithComplexArg.mul,
+			quot: publicsWithComplexArg.div
 		}, wrapOneArgumentMethods);
 
 		return build({
